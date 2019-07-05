@@ -58,7 +58,7 @@ public class JobFailMonitorHelper {
 								XxlJobLog log = XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().load(failLogId);
 								XxlJobInfo info = XxlJobAdminConfig.getAdminConfig().getXxlJobInfoDao().loadById(log.getJobId());
 
-								// 1、fail retry monitor
+								// 1、失败重试监控
 								if (log.getExecutorFailRetryCount() > 0) {
 									JobTriggerPoolHelper.trigger(log.getJobId(), TriggerTypeEnum.RETRY, (log.getExecutorFailRetryCount()-1), log.getExecutorShardingParam(), null);
 									String retryMsg = "<br><br><span style=\"color:#F39C12;\" > >>>>>>>>>>>"+ I18nUtil.getString("jobconf_trigger_type_retry") +"<<<<<<<<<<< </span><br>";
@@ -71,6 +71,7 @@ public class JobFailMonitorHelper {
 								if (info!=null && info.getAlarmEmail()!=null && info.getAlarmEmail().trim().length()>0) {
 									boolean alarmResult = true;
 									try {
+										//发送警告
 										alarmResult = failAlarm(info, log);
 									} catch (Exception e) {
 										alarmResult = false;

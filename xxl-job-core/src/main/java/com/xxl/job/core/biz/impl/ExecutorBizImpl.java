@@ -69,7 +69,9 @@ public class ExecutorBizImpl implements ExecutorBiz {
     @Override
     public ReturnT<String> run(TriggerParam triggerParam) {
         // load old：jobHandler + jobThread
+        //先判断是否存在处理jobId的jobThread,不存在就注册一个
         JobThread jobThread = XxlJobExecutor.loadJobThread(triggerParam.getJobId());
+        //获取IJobHandler
         IJobHandler jobHandler = jobThread!=null?jobThread.getHandler():null;
         String removeOldReason = null;
 
@@ -78,6 +80,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
         if (GlueTypeEnum.BEAN == glueTypeEnum) {
 
             // new jobhandler
+            // 根据jobHandler的名称，获取我们一开始就存入jobHandlerResp中的IJobHandler
             IJobHandler newJobHandler = XxlJobExecutor.loadJobHandler(triggerParam.getExecutorHandler());
 
             // valid old jobThread
@@ -90,6 +93,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
             }
 
             // valid handler
+            //如果是第一次触发，jobHandler为空，那么就设置对应的jobHandler
             if (jobHandler == null) {
                 jobHandler = newJobHandler;
                 if (jobHandler == null) {
@@ -142,13 +146,16 @@ public class ExecutorBizImpl implements ExecutorBiz {
         }
 
         // executor block strategy
+        //jobThread不为空，说明任务执行中，这个时候可以通过阻塞策略做对应的动作,比如说丢弃、覆盖等
         if (jobThread != null) {
             ExecutorBlockStrategyEnum blockStrategy = ExecutorBlockStrategyEnum.match(triggerParam.getExecutorBlockStrategy(), null);
+            //执行丢弃后续调度逻辑
             if (ExecutorBlockStrategyEnum.DISCARD_LATER == blockStrategy) {
                 // discard when running
                 if (jobThread.isRunningOrHasQueue()) {
                     return new ReturnT<String>(ReturnT.FAIL_CODE, "block strategy effect："+ExecutorBlockStrategyEnum.DISCARD_LATER.getTitle());
                 }
+                //覆盖之前调度逻辑
             } else if (ExecutorBlockStrategyEnum.COVER_EARLY == blockStrategy) {
                 // kill running jobThread
                 if (jobThread.isRunningOrHasQueue()) {
@@ -162,11 +169,13 @@ public class ExecutorBizImpl implements ExecutorBiz {
         }
 
         // replace thread (new or exists invalid)
+        //如果是第一次执行，那么就新建一个jobThread，并start(),并放入XxlJobExecutor.jobThreadRepository中
         if (jobThread == null) {
             jobThread = XxlJobExecutor.registJobThread(triggerParam.getJobId(), jobHandler, removeOldReason);
         }
 
         // push data to queue
+        //放入执行队列，实现快速的吞吐
         ReturnT<String> pushResult = jobThread.pushTriggerQueue(triggerParam);
         return pushResult;
     }

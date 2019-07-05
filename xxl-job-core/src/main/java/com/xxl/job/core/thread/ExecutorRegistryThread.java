@@ -42,9 +42,11 @@ public class ExecutorRegistryThread {
                 // registry
                 while (!toStop) {
                     try {
+                        //构建注册请求参数
                         RegistryParam registryParam = new RegistryParam(RegistryConfig.RegistType.EXECUTOR.name(), appName, address);
                         for (AdminBiz adminBiz: XxlJobExecutor.getAdminBizList()) {
                             try {
+                                //执行AdminBiz子类的registry方法
                                 ReturnT<String> registryResult = adminBiz.registry(registryParam);
                                 if (registryResult!=null && ReturnT.SUCCESS_CODE == registryResult.getCode()) {
                                     registryResult = ReturnT.SUCCESS;
@@ -78,6 +80,7 @@ public class ExecutorRegistryThread {
 
                 // registry remove
                 try {
+                    //stop后，销毁执行器
                     RegistryParam registryParam = new RegistryParam(RegistryConfig.RegistType.EXECUTOR.name(), appName, address);
                     for (AdminBiz adminBiz: XxlJobExecutor.getAdminBizList()) {
                         try {

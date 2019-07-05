@@ -70,13 +70,16 @@ public class XxlJobExecutor  {
         XxlJobFileAppender.initLogPath(logPath);
 
         // init invoker, admin-client
+        //初始化调度中心的本地列表
         initAdminBizList(adminAddresses, accessToken);
 
 
         // init JobLogFileCleanThread
+        //日志清除线程
         JobLogFileCleanThread.getInstance().start(logRetentionDays);
 
         // init TriggerCallbackThread
+        //启动触发器回调守护线程
         TriggerCallbackThread.getInstance().start();
 
         // init executor-server
@@ -120,6 +123,7 @@ public class XxlJobExecutor  {
 
                     String addressUrl = address.concat(AdminBiz.MAPPING);
 
+                    //通过XxlRpcReferenceBean#getObject()设置动态代理,主要用来请求和处理rpc信息，这里使用的是NETTY_HTTP去处理，还支持mima,netty,JETTY等的扩展
                     AdminBiz adminBiz = (AdminBiz) new XxlRpcReferenceBean(
                             NetEnum.NETTY_HTTP,
                             serializer,

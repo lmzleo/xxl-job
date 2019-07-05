@@ -26,7 +26,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author xuxueli 2018-10-28 00:18:17
@@ -35,22 +38,25 @@ import java.util.concurrent.ConcurrentHashMap;
 public class XxlJobScheduler implements InitializingBean, DisposableBean {
     private static final Logger logger = LoggerFactory.getLogger(XxlJobScheduler.class);
 
-
     @Override
     public void afterPropertiesSet() throws Exception {
         // init i18n
         initI18n();
 
         // admin registry monitor run
+        //启动自动注册线程， 获取类型为自动注册的执行器信息，完成机器的自动注册与发现
         JobRegistryMonitorHelper.getInstance().start();
 
         // admin monitor run
+        //启动失败日志监控线程
         JobFailMonitorHelper.getInstance().start();
 
         // admin-server
+        //初始化 调度中心服务，提供api供执行器调用
         initRpcProvider();
 
         // start-schedule
+        //启动自动调度守护线程
         JobScheduleHelper.getInstance().start();
 
         logger.info(">>>>>>>>> init xxl-job admin success.");

@@ -47,12 +47,14 @@ public class TriggerCallbackThread {
     public void start() {
 
         // valid
+        //判断我们在步骤2中获取到的adminBizList是否有值
         if (XxlJobExecutor.getAdminBizList() == null) {
             logger.warn(">>>>>>>>>>> xxl-job, executor callback config fail, adminAddresses is null.");
             return;
         }
 
         // callback
+        //启动任务执行完成的回调线程
         triggerCallbackThread = new Thread(new Runnable() {
 
             @Override
@@ -86,6 +88,7 @@ public class TriggerCallbackThread {
                     List<HandleCallbackParam> callbackParamList = new ArrayList<HandleCallbackParam>();
                     int drainToNum = getInstance().callBackQueue.drainTo(callbackParamList);
                     if (callbackParamList!=null && callbackParamList.size()>0) {
+                        //任务结果回调
                         doCallback(callbackParamList);
                     }
                 } catch (Exception e) {
@@ -158,8 +161,12 @@ public class TriggerCallbackThread {
         // callback, will retry if error
         for (AdminBiz adminBiz: XxlJobExecutor.getAdminBizList()) {
             try {
+                //AdminBiz->刚刚用XxlRpcReferenceBean设置动态代理的对象
+                //实际上会通过XxlRpcRequest调用xxl-job-admin /api接口
+                //并通过XxlRpcProviderFactory，使用反射，调用adminBiz的实现类的callBack方法
                 ReturnT<String> callbackResult = adminBiz.callback(callbackParamList);
                 if (callbackResult!=null && ReturnT.SUCCESS_CODE == callbackResult.getCode()) {
+                    //日志记录
                     callbackLog(callbackParamList, "<br>----------- xxl-job job callback finish.");
                     callbackRet = true;
                     break;
